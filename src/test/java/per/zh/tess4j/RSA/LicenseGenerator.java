@@ -125,6 +125,9 @@ public class LicenseGenerator {
             try {
                 Long fileLength = file.length();
                 fileContent = new byte[fileLength.intValue()];
+                FileInputStream in = new FileInputStream(file);
+                in.read(fileContent);
+                in.close();
             } catch (Exception e) {
                 e.printStackTrace();
             }
