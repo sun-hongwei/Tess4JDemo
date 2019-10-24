@@ -21,8 +21,6 @@ public class SerialNumberUtil {
 
     /**
      * 获取主板序列号
-     *
-     * @return
      */
     public static String getMotherboardSN() {
         String result = "";
@@ -111,8 +109,6 @@ public class SerialNumberUtil {
                     + "For Each objItem in colItems \n"
                     + "    Wscript.Echo objItem.ProcessorId \n"
                     + "    exit for  ' do the first cpu only! \n" + "Next \n";
-
-            // + "    exit for  \r\n" + "Next";
             fw.write(vbs);
             fw.close();
             String path = file.getPath().replace("%20", " ");
@@ -193,7 +189,6 @@ public class SerialNumberUtil {
 
     public static String executeLinuxCmd(String cmd) {
         try {
-            System.out.println("got cmd job : " + cmd);
             Runtime run = Runtime.getRuntime();
             Process process;
             process = run.exec(cmd);
@@ -204,7 +199,6 @@ public class SerialNumberUtil {
             for (int n; (n = in.read(b)) != -1; ) {
                 out.append(new String(b, 0, n));
             }
-
             in.close();
             process.destroy();
             return out.toString();
@@ -232,7 +226,6 @@ public class SerialNumberUtil {
                 return sn[1];
             }
         }
-
         return null;
     }
 
@@ -242,73 +235,42 @@ public class SerialNumberUtil {
      * @return
      */
     public static Map<String, String> getAllSn() {
+        //获取操作系统
         String os = System.getProperty("os.name");
         os = os.toUpperCase();
-        System.out.println(os);
 
         Map<String, String> snVo = new HashMap<String, String>();
 
         if (os.contains("LINUX")) {
-            System.out.println("=============>for linux");
             String cpuid = getSerialNumber("dmidecode -t processor | grep 'ID'", "ID", ":");
-            System.out.println("cpuid : " + cpuid);
             String mainboardNumber = getSerialNumber("dmidecode |grep 'Serial Number'", "Serial Number", ":");
-            System.out.println("mainboardNumber : " + mainboardNumber);
-            String diskNumber = getSerialNumber("fdisk -l", "Disk identifier", ":");
-            System.out.println("diskNumber : " + diskNumber);
-            String mac = getSerialNumber("ifconfig -a", "ether", " ");
+            //备用字段
+            //String diskNumber = getSerialNumber("fdisk -l", "Disk identifier", ":");
 
-            /*snVo.put("cpuid", cpuid.toUpperCase().replace(" ", ""));
-            snVo.put("diskid", diskNumber.toUpperCase().replace(" ", ""));
-            snVo.put("mac", mac.toUpperCase().replace(" ", ""));
-            snVo.put("mainboard", mainboardNumber.toUpperCase().replace(" ", ""));*/
             //cpuId加主板ID
-            if(cpuid != "" && mainboardNumber != ""){
+            if (cpuid != "" && mainboardNumber != "") {
                 String serialNumber = cpuid + mainboardNumber;
-                snVo.put("serialNumber",serialNumber.trim());
+                snVo.put("serialNumber", serialNumber.trim());
             }
-        } else if (os.contains("WINDOWS")){
+        } else if (os.contains("WINDOWS")) {
             System.out.println("=============>for windows");
             String cpuid = SerialNumberUtil.getCPUSerial();
             String mainboard = SerialNumberUtil.getMotherboardSN();
-            String disk = SerialNumberUtil.getHardDiskSN("c");
-            String mac = SerialNumberUtil.getMac();
-
-            System.out.println("CPU  SN:" + cpuid);
-            System.out.println("主板  SN:" + mainboard);
-            System.out.println("C盘   SN:" + disk);
-            System.out.println("MAC  SN:" + mac);
-
-            /*snVo.put("cpuid", cpuid.toUpperCase().replace(" ", ""));
-            snVo.put("diskid", disk.toUpperCase().replace(" ", ""));
-            snVo.put("mac", mac.toUpperCase().replace(" ", ""));
-            snVo.put("mainboard", mainboard.toUpperCase().replace(" ", ""));*/
+            //以下字段备用
+            //String disk = SerialNumberUtil.getHardDiskSN("c");
+            //String mac = SerialNumberUtil.getMac();
 
             //cpuId加主板ID
-            if(cpuid != "" && mainboard != ""){
+            if (cpuid != "" && mainboard != "") {
                 String serialNumber = cpuid + mainboard;
-                snVo.put("serialNumber",serialNumber.trim());
+                snVo.put("serialNumber", serialNumber.trim());
             }
-        }else if(os.contains("MAC OS X")){
+        } else if (os.contains("MAC OS X")) {
             String serialNumber = getSerialNumber("system_profiler SPHardwareDataType", "Serial Number (system)", ":");
-            if(serialNumber != ""){
-                snVo.put("serialNumber",serialNumber.trim());
+            if (serialNumber != "") {
+                snVo.put("serialNumber", serialNumber.trim());
             }
         }
-
         return snVo;
-    }
-
-    /**
-     * linux
-     * cpuid : dmidecode -t processor | grep 'ID'
-     * mainboard : dmidecode |grep 'Serial Number'
-     * disk : fdisk -l
-     * mac : ifconfig -a
-     *
-     * @param args
-     */
-    public static void main(String[] args) {
-        getAllSn();
     }
 }

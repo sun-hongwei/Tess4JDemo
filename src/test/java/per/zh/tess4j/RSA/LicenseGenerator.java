@@ -37,12 +37,16 @@ public class LicenseGenerator {
             "7IGmCvGzKZovisQ/4tZpcUEU20fUSbbtu3L0coQ9URV61OFBZseQVWdsfjfE4rV8a06+PHAVwySJ\n" +
             "KOaWW4pt";
 
+    /**
+     * 私钥加密机器码，生成license 文件
+     *
+     * @throws Exception
+     */
     public static void generator() throws Exception {
         System.err.println("私钥加密——公钥解密");
         System.out.println("机器码：\r\n" + serialNumber);
         if (StringUtils.isNotEmpty(serialNumber)) {
             byte[] data = serialNumber.getBytes();
-
             //私钥加密
             byte[] encodedData = RSAUtils.encryptByPrivateKey(data, privateKey);
             System.out.println("加密后：\r\n" + new String(encodedData)); //加密后乱码是正常的
@@ -50,11 +54,6 @@ public class LicenseGenerator {
             //生成license文件
             Base64Utils.byteArrayToFile(encodedData, FileUtil.getBasePath() + File.separator + "license.dat");
             System.out.println("license.dat：\r\n" + FileUtil.getBasePath() + File.separator + "license.dat");
-
-            //解密
-            byte[] decodedData = RSAUtils.decryptByPublicKey(encodedData, publicKey);
-            String target = new String(decodedData);
-            System.out.println("解密后: \r\n" + target);
         }
     }
 
@@ -76,7 +75,7 @@ public class LicenseGenerator {
     }
 
     /**
-     * 加、解密机器码，生成license文件
+     * 加密机器码，生成license文件
      */
     @Test
     public void generateLicense() {
@@ -92,7 +91,7 @@ public class LicenseGenerator {
      */
     @Test
     public void decodingLicense() {
-        //1获取License文件路径
+        //1、获取License文件路径
         String licensePath = FileUtil.getBasePath() + "/license.dat";
 
         if (StringUtils.isNotEmpty(licensePath)) {
@@ -100,12 +99,20 @@ public class LicenseGenerator {
             byte[] bytes = readToByte(licensePath);
             if (bytes != null) {
                 try {
-                    //解密
+                    //2、公钥解密
                     byte[] decodedData = RSAUtils.decryptByPublicKey(bytes, publicKey);
+                    //解密结果
                     String target = new String(decodedData);
-                    System.out.println("解密后: \r\n" + target);
+                    //3、对比验证
+                    if (StringUtils.isNotEmpty(target)) {
+                        if (target.equals(serialNumber)) {
+                            System.out.println("验证通过");
+                        } else {
+                            System.out.println("验证失败，请联系长春易加科技有限公司进行系统注册");
+                        }
+                    }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    System.out.println("验证失败，请联系长春易加科技有限公司进行系统注册");
                 }
             }
         }
@@ -118,7 +125,7 @@ public class LicenseGenerator {
      * @return
      */
     private byte[] readToByte(String fileName) {
-        //文件内容
+        //byte 文件内容
         byte[] fileContent = null;
         File file = new File(fileName);
         if (file.exists()) {

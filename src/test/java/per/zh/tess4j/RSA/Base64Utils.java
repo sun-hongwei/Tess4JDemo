@@ -38,7 +38,6 @@ public class Base64Utils {
      * @throws Exception
      */
     public static byte[] decode(String base64) throws Exception {
-        //return Base64.decode(base64.getBytes());
         return new BASE64Decoder().decodeBuffer(base64);
     }
 
@@ -53,7 +52,6 @@ public class Base64Utils {
      * @throws Exception
      */
     public static String encode(byte[] bytes) throws Exception {
-        //return new String(Base64.encode(bytes));
         return new BASE64Encoder().encode(bytes);
     }
 
@@ -131,9 +129,6 @@ public class Base64Utils {
     public static void byteArrayToFile(byte[] bytes, String filePath) throws Exception {
         InputStream in = new ByteArrayInputStream(bytes);
         File destFile = new File(filePath);
-        //if (!destFile.getParentFile().exists()) {
-        //     destFile.getParentFile().mkdirs();
-        //}
         destFile.createNewFile();
         OutputStream out = new FileOutputStream(destFile);
         byte[] cache = new byte[CACHE_SIZE];
