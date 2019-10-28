@@ -12,7 +12,7 @@ import java.util.Map;
 public class LicenseGenerator {
 
     /**
-     * 获取机器吗
+     * 获取机器码
      */
     private static String serialNumber = SerialNumberUtil.getAllSn().get("serialNumber");
 

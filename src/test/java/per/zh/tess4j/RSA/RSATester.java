@@ -46,6 +46,7 @@ public class RSATester {
         byte[] decodedData = RSAUtils.decryptByPublicKey(encodedData, publicKey);
         String target = new String(decodedData);
         System.out.println("解密后: \r\n" + target);
+
         System.err.println("私钥签名——公钥验证签名");
         String sign = RSAUtils.sign(encodedData, privateKey);
         System.err.println("签名:\r" + sign);
