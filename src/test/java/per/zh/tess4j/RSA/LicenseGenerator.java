@@ -4,6 +4,7 @@ import org.junit.Test;
 import per.zh.tess4j.system.SerialNumberUtil;
 
 import java.io.*;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
@@ -39,21 +40,28 @@ public class LicenseGenerator {
 
     /**
      * 私钥加密机器码，生成license 文件
-     *
-     * @throws Exception
      */
-    public static void generator() throws Exception {
+    public static void generator() {
         System.err.println("私钥加密——公钥解密");
-        System.out.println("机器码：\r\n" + serialNumber);
         if (StringUtils.isNotEmpty(serialNumber)) {
-            byte[] data = serialNumber.getBytes();
-            //私钥加密
-            byte[] encodedData = RSAUtils.encryptByPrivateKey(data, privateKey);
-            System.out.println("加密后：\r\n" + new String(encodedData)); //加密后乱码是正常的
+            try {
+                //代码
+                byte[] data1 = Base64Utils.fileToByte("/Users/hongweisun/share/Check.class");
+                //机器码
+                byte[] data2 = serialNumber.getBytes();
 
-            //生成license文件
-            Base64Utils.byteArrayToFile(encodedData, FileUtil.getBasePath() + File.separator + "license.dat");
-            System.out.println("license.dat：\r\n" + FileUtil.getBasePath() + File.separator + "license.dat");
+                //1、私钥加密（代码）
+                byte[] classCode = RSAUtils.encryptByPrivateKey(data1, privateKey);
+                //2、生成代码license文件
+                Base64Utils.byteArrayToFile(classCode, FileUtil.getBasePath() + File.separator + "license1.dat");
+
+                //3、私钥加密（机器码）
+                byte[] encodedData = RSAUtils.encryptByPrivateKey(data2, privateKey);
+                //4、生成机器码license文件
+                Base64Utils.byteArrayToFile(encodedData, FileUtil.getBasePath() + File.separator + "license2.dat");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -91,54 +99,75 @@ public class LicenseGenerator {
      */
     @Test
     public void decodingLicense() {
-        //1、获取License文件路径
-        String licensePath = FileUtil.getBasePath() + "/license.dat";
+        //1、获取代码License文件路径
+        String codeLicensePath = FileUtil.getBasePath() + File.separator + "license1.dat";
 
-        if (StringUtils.isNotEmpty(licensePath)) {
-            //读取文件内容
-            byte[] bytes = readToByte(licensePath);
-            if (bytes != null) {
-                try {
-                    //2、公钥解密
-                    byte[] decodedData = RSAUtils.decryptByPublicKey(bytes, publicKey);
-                    //解密结果
-                    String target = new String(decodedData);
-                    //3、对比验证
-                    if (StringUtils.isNotEmpty(target)) {
-                        if (target.equals(serialNumber)) {
-                            System.out.println("验证通过");
-                        } else {
-                            System.out.println("验证失败，请联系长春易加科技有限公司进行系统注册");
-                        }
+        //2、获取机器码License文件路径
+        String serialNumberLicensePath = FileUtil.getBasePath() + File.separator + "license2.dat";
+
+        if (StringUtils.isNotEmpty(codeLicensePath) && StringUtils.isNotEmpty(serialNumberLicensePath)) {
+            try {
+                //读取代码文件内容
+                byte[] codeBytes = Base64Utils.fileToByte(codeLicensePath);
+                //公钥解密代码文件
+                byte[] decodedData = RSAUtils.decryptByPublicKey(codeBytes, publicKey);
+                //将byte数组转文件
+                boolean fileStatus = FileUtil.getFileByBytes(decodedData, FileUtil.getBasePath(), "Check.dat");
+
+                if (fileStatus) {
+                    //自定义classLoader
+                    ByteLoader loader = new ByteLoader();
+                    File file = new File(FileUtil.getBasePath() + File.separator + "Check.dat");
+
+                    try (FileInputStream in = new FileInputStream(file)) {
+                        byte[] bytes = new byte[in.available()];
+                        in.read(bytes);
+                        loader.addByte("Check", bytes);
                     }
-                } catch (Exception e) {
-                    System.out.println("验证失败，请联系长春易加科技有限公司进行系统注册");
+                    //反射
+                    Class<?> clazz = loader.findClass("Check");
+
+                    Method method = clazz.getMethod("hello");
+
+                    Object invoke = method.invoke(clazz.newInstance());
+
+                    System.out.println(invoke);
+                } else {
+                    System.out.println("注册失败，请联系长春易加科技有限公司。客服电话：4007-1617-67");
                 }
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
+
         }
     }
 
     /**
-     * 读文件
-     *
-     * @param fileName License文件路径
-     * @return
+     * 测试classLoader
      */
-    private byte[] readToByte(String fileName) {
-        //byte 文件内容
-        byte[] fileContent = null;
-        File file = new File(fileName);
-        if (file.exists()) {
-            try {
-                Long fileLength = file.length();
-                fileContent = new byte[fileLength.intValue()];
-                FileInputStream in = new FileInputStream(file);
-                in.read(fileContent);
-                in.close();
-            } catch (Exception e) {
-                e.printStackTrace();
+    @Test
+    public void loadClass() {
+        try {
+            //自定义classLoader
+            ByteLoader loader = new ByteLoader();
+            File file = new File("/Users/hongweisun/JavaDev/Tess4JDemo/target/test-classes/Check.dat");
+
+            try (FileInputStream in = new FileInputStream(file)) {
+                byte[] bytes = new byte[in.available()];
+                in.read(bytes);
+                loader.addByte("Check", bytes);
             }
+            Class<?> clazz = loader.findClass("Check");
+
+            Method method = clazz.getMethod("hello");
+
+            Object invoke = method.invoke(clazz.newInstance());
+
+            System.out.println(invoke);
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return fileContent;
     }
 }
