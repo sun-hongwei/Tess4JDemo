@@ -39,10 +39,10 @@ public class LicenseGenerator {
             "KOaWW4pt";
 
     /**
-     * 私钥加密机器码，生成license 文件
+     * 私钥加密代码与机器码，生成license 文件
      */
-    public static void generator() {
-        System.err.println("私钥加密——公钥解密");
+    @Test
+    public void generator() {
         if (StringUtils.isNotEmpty(serialNumber)) {
             try {
                 //代码
@@ -82,17 +82,6 @@ public class LicenseGenerator {
         }
     }
 
-    /**
-     * 加密机器码，生成license文件
-     */
-    @Test
-    public void generateLicense() {
-        try {
-            generator();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
 
     /**
      * 根据生成的license 进行解密
@@ -113,8 +102,9 @@ public class LicenseGenerator {
                 byte[] decodedData = RSAUtils.decryptByPublicKey(codeBytes, publicKey);
                 //将byte数组转文件
                 boolean fileStatus = FileUtil.getFileByBytes(decodedData, FileUtil.getBasePath(), "Check.dat");
-
-                if (fileStatus) {
+                //读取机器码文件内容
+                byte[] serialNumberBytes = Base64Utils.fileToByte(serialNumberLicensePath);
+                if (fileStatus && serialNumberBytes != null) {
                     //自定义classLoader
                     ByteLoader loader = new ByteLoader();
                     File file = new File(FileUtil.getBasePath() + File.separator + "Check.dat");
@@ -127,9 +117,9 @@ public class LicenseGenerator {
                     //反射
                     Class<?> clazz = loader.findClass("Check");
 
-                    Method method = clazz.getMethod("hello");
+                    Method method = clazz.getMethod("checkSerialNumber", String.class, byte[].class, String.class);
 
-                    Object invoke = method.invoke(clazz.newInstance());
+                    Object invoke = method.invoke(clazz.newInstance(), serialNumber, serialNumberBytes, publicKey);
 
                     System.out.println(invoke);
                 } else {
@@ -160,7 +150,7 @@ public class LicenseGenerator {
             }
             Class<?> clazz = loader.findClass("Check");
 
-            Method method = clazz.getMethod("hello");
+            Method method = clazz.getMethod("getSerialNumber");
 
             Object invoke = method.invoke(clazz.newInstance());
 
